@@ -2,11 +2,12 @@ import math
 import numpy as np
 from timer_wrapper import timeit, clock
 from itertools import chain
+from bisect import bisect
 
 class PrimeCounter:
     THIRD = 1/3
     TWO_THIRD = 2/3
-    def __init__(self, upper_limit, c):
+    def __init__(self, upper_limit):
         upper_limit_2_third = int(round(pow(upper_limit, self.TWO_THIRD), 5))
         self.sieved_primes = self.prime_sieve(upper_limit_2_third)
         
@@ -16,11 +17,7 @@ class PrimeCounter:
         self.mu_values = self.compute_mobius(upper_limit_third)
 
         self.phi_sieve, self.F_array = self.phi_precompute_sieve(upper_limit_2_third, upper_limit_third)
-
-        # self.Q = np.prod(self.primes[:c])
-        # self.c = c
-        # self.phi_cache = {}
-        # self.phi_lookup = self.phi_precompute()
+        self.phi_cache = {}
 
     def prime_sieve(self, n):
         marks = np.ones(n-1, dtype=bool)
@@ -42,9 +39,8 @@ class PrimeCounter:
         for p in self.primes:
             p_square = p*p
             mobius_marks[(p_square-1):max_value:(p_square)] = 0
-        return mobius_marks 
-    
-    # @timeit
+        return mobius_marks  
+
     def phi_precompute_sieve(self, n, a):
         """
         F_array = {(m, f(m), mu(m))}, we will leave out mu(m) as we already have another function that computes that.
@@ -67,13 +63,33 @@ class PrimeCounter:
                             F_array.append((i+1, p, mu)) # we only want m from 1 to a, where mu != 0
                     marks[i] = False
             sieve_history.append(np.copy(marks))
+        F_array.sort(key=lambda x: x[0])
         return np.array(sieve_history), np.array(F_array, dtype=int)
-    
-    def naive_phi(self, y, b):
-        """Must run phi_precompute_sieve beforehand"""
-        if b==0: return int(y)
-        return np.count_nonzero(self.phi_sieve[b-1][:y])
 
+    def naive_phi(self, y, b): 
+        """Must run phi_precompute_sieve beforehand"""
+        # if b==0: return int(y)
+        # return np.count_nonzero(self.phi_sieve[b-1][:y])
+        
+        if b==0: return int(y)
+        if b in self.phi_cache:
+            phi_incomplete_index = bisect(self.phi_cache[b], y, key=lambda x: x[0])
+            # print(y, phi_incomplete_index, self.phi_cache[b])
+            if phi_incomplete_index == 0:
+                _first = np.count_nonzero(self.phi_sieve[b-1][:y])
+                self.phi_cache[b].insert(0, (y, _first)) # insert our new computation at the start of a list
+                return _first  #the previous y value calculated are all higher than what we needed
+            else:
+                y_computed, phi_incomplete = self.phi_cache[b][phi_incomplete_index-1]
+                _new = phi_incomplete + np.count_nonzero(self.phi_sieve[b-1][y_computed:y])
+                self.phi_cache[b].insert(phi_incomplete_index + 1, (y, _new)) 
+                return _new
+        else:
+            _first = np.count_nonzero(self.phi_sieve[b-1][:y])
+            self.phi_cache[b] = [(y, _first)]
+            return _first
+
+    # @timeit
     def compute_special_leaves(self, x, x_cubert, p_cubert):
         """
         @x_cubert: Cube Root of the x value (of PrimePi.count)
@@ -84,7 +100,7 @@ class PrimeCounter:
         * self.F_array (from using self.phi_precompute)
         """
         # We will need to sieve the entire block [1, x^(2/3)]
-        # store all the arrays?
+        # Store all the intermediate computations
         # Compute the F array
         s_2 = 0
         # For each prime, p_b <= x^(1/3), 
@@ -92,25 +108,21 @@ class PrimeCounter:
         # print(self.F_array[self.F_array[:, 0] <= 6])
         for b, p_b in enumerate(chain([1], self.primes)):
             if b >= x_cubert: break
+            
             p_next = self.primes[b] # This is p_b+1
-            # if p_next > x_cubert:
-            #     _intermed = self.mu_values[p_next-1]*self.naive_phi(x//p_next,b)
-            #     s_2 += _intermed
-            #     print(f"a p_(b+1) = {p_next} n* = 1, f({x}/{p_next}, {b}) = {_intermed}")
-            # print("p_b =", p_b)
-            for m, f_m, mu in self.F_array:
-                if m*p_next <= x_cubert or m > x_cubert: continue
-                # print("f_arr:", m, f_m, p_next)
-                if f_m > p_next:
-                    y = x//(m*p_next)
-                    _intermed = mu*self.naive_phi(y, b)
-                    # print(f"p_(b+1) = {p_next} n* = {m}, f({x}/{p_next*m}, {b}) = {-_intermed}")
-                    s_2 -= _intermed
-        # Compute the y value using x//(m*p_b+1)
 
+            # clock.start(f"{b}, {p_b}")
+            max_index = np.searchsorted(self.F_array[:, 0], x_cubert, side='right')
+            applicable_range = self.F_array[:max_index]
+            for m, f_m, mu in applicable_range[applicable_range[:, 1] > p_next]: #! This likely contains the performance issue
+                if m*p_next <= x_cubert: continue
+                y = x//(m*p_next)
+                # print(f"p_(b+1) = {p_next} n* = {m}, f({x}/{p_next*m}, {b}) = {-_intermed}")
+                s_2 -= mu*self.naive_phi(y, b)
+            # clock.stop()
+        # Compute the y value using x//(m*p_b+1)
         # Compute phi(y, b) using the sieve => np.nonzero((intermediate result up to p_b) <= y)
         # This requires a snapshot of all the intermediate results of the sieve
-        # print("s", s_2)
         return s_2
 
     def compute_ordinary_leaves(self, x, x_cubert):
@@ -118,8 +130,7 @@ class PrimeCounter:
         for n, mu in enumerate(self.mu_values):
             if n + 1 > x_cubert: break
             s_1 += mu * (x//(n+1))
-        
-        # print("o", s_1)
+
         return s_1
 
 
@@ -128,38 +139,6 @@ class PrimeCounter:
 
     def phi(self, x, x_cubert, p_cubert):
         return self.compute_ordinary_leaves(x, x_cubert) + self.compute_special_leaves(x, x_cubert, p_cubert)
-
-    # def phi_precompute(self):
-    #     def unoptimised_phi(x, a):
-    #             # If value is cached, just return it
-    #         if (int(x), a) in self.phi_cache: return self.phi_cache[(int(x), a)]
-
-    #         # Base case: phi(x, a) is the number of odd integers <= x
-    #         if a==0: return math.floor(x)
-
-    #         result = unoptimised_phi(x, a-1) - unoptimised_phi(x / self.primes[a-1], a-1)
-    #         self.phi_cache[(int(x), a)] = result
-    #         return result
-        
-    #     lookup_table = {} # a value is implicitly 5
-    #     for x in range(self.Q + 1):
-    #         lookup_table[x] = unoptimised_phi(x, self.c)
-    #     return lookup_table
-
-    # def phi(self, x, a):
-    #     # If value is cached, just return it
-    #     if (int(x), a) in self.phi_cache: return self.phi_cache[(int(x), a)]
-
-    #     # We have 2 "truncating rules"
-    #     if a >= 1 and x < self.primes[a-1]: return 1
-    #     if a == self.c: # Uses a lookup table to cut-off all the additional branches
-    #         # print(math.floor(x - math.floor(x/Q)*Q))
-    #         return ((x//self.Q)*self.phi_lookup[self.Q]) + self.phi_lookup[math.floor(x - (x//self.Q)*self.Q)]
-    #     if a == 0: return math.floor(x) # if we are computing a small a value > 5 then we need something to fallback to
-
-    #     result = self.phi(int(x), a-1) - self.phi(x // self.primes[a-1], a-1)
-    #     self.phi_cache[(int(x), a)] = result # Memoize
-    #     return result
 
     # Calculating P_2(x, a), 
     def p2(self, x, a):
@@ -174,20 +153,16 @@ class PrimeCounter:
         # for p in self.primes[np.logical_and(lower, upper)]:
         #     p_sum += (self.pi(x//p) - self.pi(p) + 1)
         # return p_sum
-    @timeit
+    # @timeit
     def count(self, x):
         x_cubert = int(round(pow(x, self.THIRD), 6))
         p_cubert = self.pi(x_cubert)
-        clock.start()
+        # clock.start()
         _phi = self.phi(x, x_cubert, p_cubert)
-        clock.stop()
+        # clock.stop()
         # clock.start()
         _p2 = self.p2(x, p_cubert)
         # clock.stop()
-        # print(_phi, _p2, p_cubert)
         return _phi + p_cubert - 1 - _p2
 
-PrimePi = PrimeCounter(10**10, 6)
-# print(PrimePi.F_array)
-print(PrimePi.count(3*(10**9)))
-# print(PrimePi.phi_cache)
+PrimePi = PrimeCounter(10**(10))
