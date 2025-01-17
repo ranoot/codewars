@@ -40,9 +40,9 @@ Under `prime_test.ipynb`, we compute the "offset" for the starting values of eac
 
 #### Computing offsets, then computing the associated index
 We first take the "row" that we want to compute offset_values for (corresponding to a certain value in our wheel),
-Then for each possible type of prime, call this `p_mod`(which is represented by our wheel) which corresponds to each row in the column matrix, 
+Then for each possible type of prime, call this $p_{mod}$(which is represented by our wheel) which corresponds to each row in the column matrix, 
 Find the value which equals our "row" then get the corresponding wheel number of the column, call this $m$
-Then compute the offset, by taking $m' - p_mod'$ (m' and p_mod' corresponds to the prime modulo that works for each row)
+Then compute the offset, by taking $m' - p_{mod}'$ (m' and p_mod' corresponds to the prime modulo that works for each row)
 
 To compute the index, we need to solve: $30i' + \alpha = p(p+k), p = 30i + \beta$ where k is our offset $\alpha$ and $\beta$ must be in "indexable" form. $\alpha$ is our row value and $\beta$ is just our prime modulo.
 
@@ -51,3 +51,7 @@ Further improvements:
 - Implement the segmented version of the phi computation.
 - Implement a segmented sieve (An attempt was made in one of the firsts commits to this repo).
 - We just need to sieve up to 10^10 within 8s? Which we can precompute and compute `pi(n)` for any n <= 10^10.
+
+## Path Finding
+
+`paths.py` contains a rather convoluted way of implementing DFS.
