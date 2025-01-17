@@ -166,3 +166,7 @@ class PrimeCounter:
         return _phi + p_cubert - 1 - _p2
 
 PrimePi = PrimeCounter(10**(10))
+
+clock.start()
+PrimePi.prime_sieve(10**10)
+clock.stop()
