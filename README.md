@@ -50,8 +50,15 @@ Further improvements:
 - Improving prime sieve via wheel factorization.
 - Implement the segmented version of the phi computation.
 - Implement a segmented sieve (An attempt was made in one of the firsts commits to this repo).
-- We just need to sieve up to 10^10 within 8s? Which we can precompute and compute `pi(n)` for any n <= 10^10.
+- We just need to sieve up to 10^10 within 8s? Which we can precompute and compute `pi(n)` for any $n \leq 10^{10}$.
 
 ## Path Finding
 
 `paths.py` contains a rather convoluted way of implementing DFS.
+
+## Sudoku Solver
+
+Link (3 kyu): <https://www.codewars.com/kata/sudoku-solver/python>
+Link (2 kyu): <https://www.codewars.com/kata/5588bd9f28dbb06f43000085>
+
+File `Sudoku/`, contains implementation of sudoku solvers using constraint propagation and some backtracking (using recursive DFS).
