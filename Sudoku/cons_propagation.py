@@ -53,7 +53,7 @@ class SudokuPuzzle:
         self.assigned_cells.add(cell)
         self.search_space[cell] = i
 
-        to_be_assigned = []
+        # to_be_assigned = []
         for peer in peers[cell]:
             peer_cell_value = self.search_space[peer]
             if len(peer_cell_value) >= 1: 
@@ -92,7 +92,7 @@ def nine_by_nine_format(puzzle):
                 output += line
         return output
 
-def solve(puzzle: SudokuPuzzle) -> SudokuPuzzle: # We try to use recursive DFS
+def solve(puzzle: SudokuPuzzle) -> SudokuPuzzle|None: # We try to use recursive DFS
     if len(puzzle.assigned_cells) == 81:
         return puzzle
 

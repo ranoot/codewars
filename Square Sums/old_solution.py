@@ -10,7 +10,7 @@ def gen_graph(num: int):
 # start from a universal vertex
 # - check whether vertex was alr in path 
 # - must be adjacent (an edge exists) to previous vertex
-def find_path(graph, num, path): # 
+def find_path(graph, num, path: list) -> list|None: # 
     if len(path) == num + 1: # base case?
         # print("HELLO")
         return path 
@@ -25,4 +25,5 @@ def square_sums(num):
     if num in NO_SOLN:
         return False
     else:
-        return (find_path(gen_graph(num), num, [0]))[1:]
+        p = find_path(gen_graph(num), num, [0])
+        return p[1:] if p != None else None

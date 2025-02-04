@@ -37,7 +37,6 @@ class SudokuPuzzle:
         self.assigned_cells.add(cell)
         self.search_space[cell] = i
 
-        to_be_assigned = []
         for peer in peers[cell]:
             peer_cell_value = self.search_space[peer]
             if len(peer_cell_value) >= 1: 
@@ -56,11 +55,11 @@ class SudokuPuzzle:
             
         return True
     
-    def solved_puzzle(self):
+    def solved_puzzle(self) -> list[list[int]]:
         if len(self.assigned_cells) == 81:
             return [[int(self.search_space[row+column]) for column in digits] for row in rows]
         else:
-            return False
+            raise Exception("Puzzle not solved!")
         
     def display_search_space(self):
         output = "+-----------------------------+-----------------------------+-----------------------------+\n"
