@@ -1,6 +1,15 @@
 # Codewars Repo
 My solutions/ non-solutions (mostly non-solutions) to codewars problems
 
+## Square Sums!
+Link: <https://www.codewars.com/kata/5a667236145c462103000091>
+
+There is a really good video by HexagonVideos or something on this topic which was derived from the solution by Gerbicz (found in [this forum](https://www.mersenneforum.org/node/17331/page2)).
+
+His solution does prove that these sequences do exist for all n >= 25 and proves this recursively. However the solution is not useful for this kata as his base cases extend past the n limit of the kata and the recursion will take these well past the limit. (And it is rather difficult to find the "ninja" pairs)
+
+He did make a follow up suggestion on optimisations which relies on the large number of possible paths and a randomised algorithm which is what I have implemented and compiled in the binary `gerbicz`.
+
 ## Prime counting
 Link: <https://www.codewars.com/kata/638c92b10e43cc000e615a07/train/python>
 
@@ -59,6 +68,7 @@ Further improvements:
 ## Sudoku Solver
 
 Link (3 kyu): <https://www.codewars.com/kata/sudoku-solver/python>
+
 Link (2 kyu): <https://www.codewars.com/kata/5588bd9f28dbb06f43000085>
 
 File `Sudoku/`, contains implementation of sudoku solvers using constraint propagation and some backtracking (using recursive DFS).
