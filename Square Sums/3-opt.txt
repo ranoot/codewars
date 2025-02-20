@@ -1,0 +1,9 @@
+before hand we will split the split the array into 3 sections alr, 
+000
+001
+010
+011
+100
+101
+110
+111
